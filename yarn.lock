@@ -1490,7 +1490,7 @@ __metadata:
     ts-node: 9.1.1
     ts-node-dev: 1.1.6
     tsconfig-paths: 3.9.0
-    type-fest: 1.2.0
+    type-fest: 1.2.1
     typescript: 4.3.2
   languageName: unknown
   linkType: soft
@@ -8725,10 +8725,10 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"type-fest@npm:1.2.0":
-  version: 1.2.0
-  resolution: "type-fest@npm:1.2.0"
-  checksum: 72c7be3e8643bf7841d3474b0ddc37f4cdff65d38dd71bb91d9618d9625238a4cd010459c33f5a34afba0e77be5921a77e8eb75bda37060a936baaebd256705d
+"type-fest@npm:1.2.1":
+  version: 1.2.1
+  resolution: "type-fest@npm:1.2.1"
+  checksum: 8a177c228267a6d50267fe7b21f1ea41d057556795df7a34ee9022088dd4fc8bddf6616790f5cf99ca73ba0ec161bae8f229b7888aaf7082d7e909bea36efd11
   languageName: node
   linkType: hard
 
