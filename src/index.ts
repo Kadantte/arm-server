@@ -1,25 +1,23 @@
+import { serve } from "@hono/node-server"
 import { captureException } from "@sentry/node"
 
-import { config } from "@/config"
-
-import { buildApp } from "./app"
-import { updateRelations } from "./update"
+import { createApp } from "./app.ts"
+import { config } from "./config.ts"
+import { updateRelations } from "./update.ts"
 
 const { NODE_ENV, PORT } = config
 
-const runUpdateScript = () => updateRelations().catch(captureException)
+const runUpdateScript = async () => updateRelations().catch(captureException)
 
-const listen = async () => {
-  if (NODE_ENV === "production") {
-    void runUpdateScript()
+if (NODE_ENV === "production") {
+	void runUpdateScript()
 
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    setInterval(runUpdateScript, 1000 * 60 * 60 * 24)
-  }
-
-  await (
-    await buildApp()
-  ).listen(PORT, process.env.NODE_ENV === "production" ? "0.0.0.0" : undefined)
+	// eslint-disable-next-line ts/no-misused-promises
+	setInterval(runUpdateScript, 1000 * 60 * 60 * 24)
 }
 
-void listen()
+const app = createApp()
+
+serve({ fetch: app.fetch, hostname: "0.0.0.0", port: PORT }, () => {
+	console.log(`Server running on ${PORT}`)
+})

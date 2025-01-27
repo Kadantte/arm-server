@@ -1,15 +1,14 @@
 {
-  extends: ["config:js-app", "helpers:disableTypesNodeMajor"],
+  extends: ["config:js-app", "helpers:disableTypesNodeMajor", "schedule:earlyMondays", "group:allNonMajor"],
   prConcurrentLimit: 5,
   branchConcurrentLimit: 5,
-  schedule: ["before 11am"],
   labels: ["dependencies"],
   baseBranches: ["master"],
   automerge: false,
   packageRules: [
     {
       packageNames: ["node"],
-      allowedVersions: "<=16",
+      allowedVersions: "<=22",
       rangeStrategy: "replace",
     },
     {

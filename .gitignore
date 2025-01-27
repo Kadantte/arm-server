@@ -2,21 +2,11 @@
 .env
 coverage/
 sqlite/
+redoc-static.html
 
 # Logs
 logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Dependency directories
 node_modules/
-
-.yarn/*
-!.yarn/patches
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
-.pnp.*

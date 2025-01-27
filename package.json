@@ -1,64 +1,77 @@
 {
-  "name": "arm-server",
-  "author": "BeeeQueue <adam.lj.haglund@gmail.com>",
-  "version": "1.0.0",
-  "private": true,
-  "license": "AGPL-3.0-only",
-  "homepage": "https://github.com/BeeeQueue/arm-server",
-  "engines": {
-    "node": ">=16.15"
-  },
-  "lint-staged": {
-    "*.{js,ts,json}": [
-      "prettier --write"
-    ]
-  },
-  "scripts": {
-    "dev": "ts-node-dev -r tsconfig-paths/register -r dotenv/config src/index.ts",
-    "fetch-data": "ts-node bin/update.ts --exit",
-    "lint": "eslint src",
-    "migrate": "knex migrate:latest --knexfile knexfile.ts",
-    "migrate:create": "knex migrate:make --knexfile knexfile.ts -x ts",
-    "start": "yarn run migrate && ts-node src/index.ts",
-    "test": "cross-env NODE_ENV=test yarn run migrate && yarn vitest run --coverage",
-    "test:dev": "cross-env NODE_ENV=test yarn run migrate && yarn vitest",
-    "postinstall": "husky install"
-  },
-  "resolutions": {
-    "@types/node": "16.11.27"
-  },
-  "dependencies": {
-    "@sentry/node": "6.18.2",
-    "@vscode/sqlite3": "5.0.7",
-    "cross-env": "7.0.3",
-    "envsafe": "2.0.3",
-    "fastify": "3.27.4",
-    "fastify-cors": "6.0.3",
-    "fastify-helmet": "7.0.1",
-    "got": "11.8.3",
-    "knex": "1.0.7",
-    "nanoid": "3.3.1",
-    "pino": "7.8.1",
-    "pino-logflare": "0.3.12",
-    "pino-pretty": "7.5.3",
-    "ts-json-validator": "0.7.1",
-    "ts-node": "10.7.0",
-    "type-fest": "2.12.0",
-    "typescript": "4.6.2"
-  },
-  "devDependencies": {
-    "@beequeue/eslint-plugin": "0.4.0",
-    "@tsconfig/node14": "1.0.1",
-    "@types/node": "16.11.27",
-    "c8": "7.11.0",
-    "dotenv": "16.0.0",
-    "eslint": "8.10.0",
-    "husky": "7.0.4",
-    "lint-staged": "12.3.5",
-    "prettier": "2.6.2",
-    "ts-node-dev": "1.1.8",
-    "tsconfig-paths": "3.14.1",
-    "vite-tsconfig-paths": "3.4.1",
-    "vitest": "0.6.1"
-  }
+	"name": "arm-server",
+	"type": "module",
+	"author": "BeeeQueue <adam@haglund.dev>",
+	"version": "1.0.0",
+	"private": true,
+	"license": "AGPL-3.0-only",
+	"homepage": "https://arm.haglund.dev/docs",
+	"packageManager": "pnpm@9.13.2",
+	"engines": {
+		"node": ">=22"
+	},
+	"simple-git-hooks": {
+		"pre-commit": "node_modules/.bin/nano-staged"
+	},
+	"nano-staged": {
+		"*.{js,cjs,mjs,ts,cts,mts,json}": ["biome check --fix"]
+	},
+	"scripts": {
+		"dev": "onchange --initial --kill 'src/**' pnpm-lock.yaml -- pnpm --silent run start",
+		"docs": "pnpm --package=@redocly/cli dlx redocly build-docs docs/openapi.yaml",
+		"docs:dev": "onchange --initial --kill docs/openapi.yaml -- pnpm --silent run docs",
+		"docker:build": "docker build . --tag arm-server",
+		"docker:start": "pnpm --silent docker:build; pnpm --silent docker:run",
+		"docker:run": "docker run -it --rm --name arm -p 3000:3000 arm-server",
+		"fetch-data": "node --experimental-strip-types --experimental-transform-types bin/update.ts --exit",
+		"lint": "eslint src",
+		"migrate": "knex migrate:latest --knexfile knexfile.js",
+		"migrate:create": "knex migrate:make --knexfile knexfile.js -x ts",
+		"start": "pnpm --silent run migrate && node --experimental-strip-types --experimental-transform-types src/index.ts",
+		"test": "NODE_ENV=test pnpm --silent run migrate && vitest",
+		"typecheck": "tsc --noEmit",
+		"prepare": "is-ci || simple-git-hooks"
+	},
+	"resolutions": {
+		"esbuild": "0.24.0"
+	},
+	"dependencies": {
+		"@hono/node-server": "1.13.7",
+		"@hono/sentry": "1.2.0",
+		"@hono/zod-validator": "0.4.1",
+		"@sentry/node": "8.38.0",
+		"@tsconfig/node22": "22.0.0",
+		"@tsconfig/strictest": "2.0.5",
+		"better-sqlite3": "11.5.0",
+		"hono": "4.6.10",
+		"is-ci": "3.0.1",
+		"knex": "3.1.0",
+		"ofetch": "1.4.1",
+		"pino": "9.5.0",
+		"pino-pretty": "13.0.0",
+		"sucrase": "3.35.0",
+		"type-fest": "4.27.0",
+		"typescript": "5.6.3",
+		"zod": "3.23.8"
+	},
+	"devDependencies": {
+		"@antfu/eslint-config": "3.8.0",
+		"@biomejs/biome": "1.9.4",
+		"@types/json-schema": "7.0.15",
+		"@types/node": "22.10.10",
+		"@vitest/coverage-v8": "2.1.8",
+		"dotenv": "16.4.5",
+		"eslint": "9.14.0",
+		"nano-staged": "0.8.0",
+		"onchange": "7.1.0",
+		"simple-git-hooks": "2.11.1",
+		"tsconfig-paths": "4.2.0",
+		"vitest": "2.1.8"
+	},
+	"pnpm": {
+		"overrides": {
+			"is-core-module": "npm:@nolyfill/is-core-module@^1",
+			"safe-buffer": "npm:@nolyfill/safe-buffer@^1"
+		}
+	}
 }

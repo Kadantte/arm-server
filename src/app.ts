@@ -1,52 +1,73 @@
-import Fastify from "fastify"
-import Cors from "fastify-cors"
-import Helmet from "fastify-helmet"
-import { customAlphabet, urlAlphabet } from "nanoid"
+import process from "node:process"
 
-import { config } from "@/config"
-import { logger } from "@/lib/logger"
-import { sendErrorToSentry } from "@/lib/sentry"
-import { apiPlugin } from "@/routes/ids"
+import { sentry } from "@hono/sentry"
+import { Hono } from "hono"
+import { cors } from "hono/cors"
+import { HTTPException } from "hono/http-exception"
+import { secureHeaders } from "hono/secure-headers"
 
-import pkgJson from "../package.json"
+import pkgJson from "../package.json" assert { type: "json" }
 
-const isProd = config.NODE_ENV === "production"
+import { docsRoutes } from "./docs.ts"
+import { logger } from "./lib/logger.ts"
+import { v1Routes } from "./routes/v1/ids/handler.ts"
+import { v2Routes } from "./routes/v2/ids/handler.ts"
+import { specialRoutes } from "./routes/v2/special/handler.ts"
+import { cacheReply, CacheTimes, createErrorJson } from "./utils.ts"
 
-const nanoid = customAlphabet(urlAlphabet, 16)
+export const createApp = () => {
+	const app = new Hono()
+		.use("*", async (c, next) => {
+			const start = Date.now()
+			logger.info(
+				{
+					method: c.req.method,
+					path: c.req.path,
+					headers: c.req.header(),
+				},
+				"req",
+			)
 
-export const buildApp = async () => {
-  const App = Fastify({
-    ignoreTrailingSlash: true,
-    onProtoPoisoning: "remove",
-    onConstructorPoisoning: "remove",
-    trustProxy: isProd,
-    genReqId: () => nanoid(),
-    disableRequestLogging: process.env.NODE_ENV === "test",
-    logger,
-  })
+			await next()
 
-  await App.register(Cors, {
-    origin: true,
-  })
+			logger.info(
+				{
+					status: c.res.status,
+					ms: Date.now() - start,
+				},
+				"res",
+			)
+		})
+		.use("*", sentry({ dsn: process.env.SENTRY_DSN! }))
+		.use("*", cors({ origin: (origin) => origin }))
+		.use("*", secureHeaders())
+		.notFound((c) => createErrorJson(c, new HTTPException(404)))
+		.onError((error, c) => {
+			/* c8 ignore next 4 */
+			if (error instanceof HTTPException) {
+				const res = error.getResponse()
 
-  await App.register(Helmet, {
-    hsts: false,
-    contentSecurityPolicy: false,
-  })
+				if (c.req.method === "GET") {
+					cacheReply(res, CacheTimes.WEEK)
+				}
 
-  App.addHook("onError", (request, _reply, error, next) => {
-    /* c8 ignore next 4 */
-    if (error.validation == null) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      sendErrorToSentry(error, request as any)
-    }
+				return createErrorJson(c, error)
+			}
 
-    next()
-  })
+			logger.error(error, "unhandled error")
 
-  await App.register(apiPlugin, { prefix: "/api" })
+			const badImpl = new HTTPException(500, { cause: error })
+			return createErrorJson(c, badImpl)
+		})
+		.route("/api", v1Routes)
+		.route("/api/v2", v2Routes)
+		.route("/api/v2", specialRoutes)
+		.route("/docs", docsRoutes)
+		.get("/", (c) => {
+			cacheReply(c.res, CacheTimes.WEEK * 4)
 
-  App.get("/", async (_request, reply) => reply.redirect(301, pkgJson.homepage))
+			return c.redirect(pkgJson.homepage, 301)
+		})
 
-  return App
+	return app
 }
